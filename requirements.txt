@@ -15,7 +15,7 @@ constantly==23.10.4
 contourpy==1.2.0
 cryptography==43.0.1
 cssselect==1.2.0
-ctnetwork @ file:///Users/voldemarq/Downloads/CTnetwork-main/dist/ctnetwork-0.1.0-py3-none-any.whl#sha256=6c68dc38dda97a0255f2882f1b59f6915cf5e33be678642c4eb78d9c87c9e7f7
+ctnetwork
 cycler==0.12.1
 debugpy==1.8.0
 decorator==5.1.1
