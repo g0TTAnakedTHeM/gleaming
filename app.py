@@ -1,72 +1,63 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file
-import pandas as pd
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from ics import Calendar, Event
-import io
+import os
 
 app = Flask(__name__)
 
-members = ["Odemar", "Sunrice", "MAGGA"]
-availability_data = {}
+# Configure PostgreSQL connection (replace with your actual credentials)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://voldemarq:9996@localhost/voldemarq'  # Adjust as needed
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def find_matching_availability():
-    matching_dates = []
-    for date, times in availability_data.get(members[0], {}).items():
-        for time_range, available in times.items():
-            if available and all(
-                availability_data.get(member, {}).get(date, {}).get(time_range, False)
-                for member in members
-            ):
-                matching_dates.append((date, time_range))
-    return matching_dates
+# Initialize the database
+db = SQLAlchemy(app)
+
+# Define the database model
+class Availability(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    member = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.String(10), nullable=False)  # Format YYYY-MM-DD
+    start_time = db.Column(db.String(5), nullable=False)  # Format HH:MM
+    end_time = db.Column(db.String(5), nullable=False)  # Format HH:MM
+    available = db.Column(db.Boolean, default=False)
+
+# Create tables (only needs to be run once)
+with app.app_context():
+    db.create_all()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
+        # Retrieve form data
         member = request.form["member"]
         date = request.form["date"]
         start_time = request.form["start_time"]
         end_time = request.form["end_time"]
         available = request.form.get("available") == "on"
-        
-        time_range = f"{start_time} - {end_time}"
-        
-        if member not in availability_data:
-            availability_data[member] = {}
-        if date not in availability_data[member]:
-            availability_data[member][date] = {}
-        availability_data[member][date][time_range] = available
+
+        # Save data to the database
+        new_availability = Availability(
+            member=member,
+            date=date,
+            start_time=start_time,
+            end_time=end_time,
+            available=available
+        )
+        db.session.add(new_availability)
+        db.session.commit()
 
         return redirect(url_for("index"))
 
-    matching_availabilities = find_matching_availability()
-    
-    data = []
-    for member, dates in availability_data.items():
-        for date, times in dates.items():
-            for time_range, available in times.items():
-                data.append({"Member": member, "Date": date, "Time Range": time_range, "Available": available})
-    df = pd.DataFrame(data)
-    
-    return render_template("index.html", members=members, df=df, matching_availabilities=matching_availabilities)
+    # Fetch all availability records
+    all_availability = Availability.query.all()
 
-@app.route("/download_event/<date>/<time_range>")
-def download_event(date, time_range):
-    start_time, end_time = time_range.split(" - ")
-    event_start = f"{date} {start_time}"
-    event_end = f"{date} {end_time}"
-    
-    # Create a calendar event
-    c = Calendar()
-    e = Event()
-    e.name = "Group Availability Match"
-    e.begin = event_start
-    e.end = event_end
-    c.events.add(e)
+    # Determine if each meeting is "Upcoming" or "Past"
+    current_datetime = datetime.now()
+    for entry in all_availability:
+        meeting_datetime = datetime.strptime(f"{entry.date} {entry.start_time}", "%Y-%m-%d %H:%M")
+        entry.status = "Upcoming" if meeting_datetime >= current_datetime else "Past"
 
-    # Create a file in memory to download
-    calendar_file = io.StringIO(str(c))
-    return send_file(io.BytesIO(calendar_file.getvalue().encode()), as_attachment=True, download_name="group_event.ics", mimetype="text/calendar")
+    return render_template("index.html", availability=all_availability)
 
 if __name__ == "__main__":
     app.run(debug=True)
