@@ -41,6 +41,7 @@
             <th>Date</th>
             <th>Time Range</th>
             <th>Available</th>
+            <th>Status</th>
         </tr>
         {% for entry in availability %}
         <tr>
@@ -48,6 +49,7 @@
             <td>{{ entry.date }}</td>
             <td>{{ entry.start_time }} - {{ entry.end_time }}</td>
             <td>{{ "Yes" if entry.available else "No" }}</td>
+            <td>{{ entry.status }}</td>
         </tr>
         {% endfor %}
     </table>
