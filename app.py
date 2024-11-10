@@ -1,12 +1,12 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 
-# Configure PostgreSQL connection (replace with your actual credentials)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://voldemarq:9996@localhost/voldemarq'  # Adjust as needed
+# Set up the database configuration using the provided external PostgreSQL URL
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://voldeamrq_user:joNKx6hi4PE9MMcuOOgkX2XwELehChft@dpg-csobs5aj1k6c73becccg-a.frankfurt-postgres.render.com/voldeamrq'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
