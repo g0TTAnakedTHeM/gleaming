@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -80,6 +80,28 @@ def index():
         entry.status = "Upcoming" if meeting_datetime >= current_datetime else "Past"
 
     return render_template("index.html", availability=all_availability, matching_availabilities=matching_availabilities)
+
+@app.route("/download_event")
+def download_event():
+    # Retrieve date and time_range from query parameters
+    date = request.args.get("date")
+    time_range = request.args.get("time_range")
+
+    # Prepare event data for .ics format
+    ics_content = f"""BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART:{date}T{time_range.split(' - ')[0].replace(':', '')}00Z
+DTEND:{date}T{time_range.split(' - ')[1].replace(':', '')}00Z
+SUMMARY:Group Meeting
+END:VEVENT
+END:VCALENDAR"""
+
+    # Create a response with the .ics content
+    response = make_response(ics_content)
+    response.headers["Content-Disposition"] = "attachment; filename=event.ics"
+    response.headers["Content-Type"] = "text/calendar; charset=utf-8"
+    return response
 
 if __name__ == "__main__":
     app.run(debug=True)
