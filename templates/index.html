@@ -42,12 +42,12 @@
             <th>Time Range</th>
             <th>Available</th>
         </tr>
-        {% for _, row in df.iterrows() %}
+        {% for entry in availability %}
         <tr>
-            <td>{{ row['Member'] }}</td>
-            <td>{{ row['Date'] }}</td>
-            <td>{{ row['Time Range'] }}</td>
-            <td>{{ "Yes" if row['Available'] else "No" }}</td>
+            <td>{{ entry.member }}</td>
+            <td>{{ entry.date }}</td>
+            <td>{{ entry.start_time }} - {{ entry.end_time }}</td>
+            <td>{{ "Yes" if entry.available else "No" }}</td>
         </tr>
         {% endfor %}
     </table>
@@ -65,7 +65,7 @@
         {% endfor %}
     </ul>
     {% else %}
-    <p>No match availability found for ya'll.. такой хуйни при порохе!!! .</p>
+    <p>No match availability found for ya'll.. такой хуйни при порохе!!!</p>
     {% endif %}
 </body>
 </html>
