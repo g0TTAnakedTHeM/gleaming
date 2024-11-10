@@ -117,3 +117,5 @@ Werkzeug==3.0.3
 wsproto==1.2.0
 zope.interface==7.0.3
 gunicorn
+flask_sqlalchemy
+psycopg2-binary
