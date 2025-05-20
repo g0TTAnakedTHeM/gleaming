@@ -5,8 +5,8 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# Set up the database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://voldeamrq_user:joNKx6hi4PE9MMcuOOgkX2XwELehChft@dpg-csobs5aj1k6c73becccg-a.frankfurt-postgres.render.com/voldeamrq'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://voldeamrq_user:frankfurt-postgres.render.com/voldeamrq'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -15,20 +15,20 @@ db = SQLAlchemy(app)
 class Availability(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     member = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.String(10), nullable=False)  # Format YYYY-MM-DD
-    start_time = db.Column(db.String(5), nullable=False)  # Format HH:MM
-    end_time = db.Column(db.String(5), nullable=False)  # Format HH:MM
+    date = db.Column(db.String(10), nullable=False)  
+    start_time = db.Column(db.String(5), nullable=False)  
+    end_time = db.Column(db.String(5), nullable=False)  
     available = db.Column(db.Boolean, default=False)
 
-# Create tables (only needed the first time)
+
 with app.app_context():
     db.create_all()
 
 def get_matching_availabilities():
-    # Query the database for all availability records where members are available
+
     all_availabilities = Availability.query.filter_by(available=True).all()
     
-    # Organize by date and time range to find matching slots
+
     availability_dict = {}
     for availability in all_availabilities:
         key = (availability.date, availability.start_time, availability.end_time)
@@ -36,7 +36,7 @@ def get_matching_availabilities():
             availability_dict[key] = set()
         availability_dict[key].add(availability.member)
 
-    # Find dates and time ranges where all members are available
+  
     all_members = {"Odemar", "Sunrice", "MAGGA"}
     matching_availabilities = [
         (date, f"{start_time} - {end_time}")
@@ -49,14 +49,13 @@ def get_matching_availabilities():
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        # Retrieve form data
+     
         member = request.form["member"]
         date = request.form["date"]
         start_time = request.form["start_time"]
         end_time = request.form["end_time"]
         available = request.form.get("available") == "on"
 
-        # Save data to the database
         new_availability = Availability(
             member=member,
             date=date,
@@ -69,11 +68,10 @@ def index():
 
         return redirect(url_for("index"))
 
-    # Fetch all availability records and matching availability times
+
     all_availability = Availability.query.all()
     matching_availabilities = get_matching_availabilities()
 
-    # Determine if each meeting is "Upcoming" or "Past"
     current_datetime = datetime.now()
     for entry in all_availability:
         meeting_datetime = datetime.strptime(f"{entry.date} {entry.start_time}", "%Y-%m-%d %H:%M")
@@ -83,11 +81,9 @@ def index():
 
 @app.route("/download_event")
 def download_event():
-    # Retrieve date and time_range from query parameters
+
     date = request.args.get("date")
     time_range = request.args.get("time_range")
-
-    # Prepare event data for .ics format
     ics_content = f"""BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
@@ -96,8 +92,6 @@ DTEND:{date}T{time_range.split(' - ')[1].replace(':', '')}00Z
 SUMMARY:Group Meeting
 END:VEVENT
 END:VCALENDAR"""
-
-    # Create a response with the .ics content
     response = make_response(ics_content)
     response.headers["Content-Disposition"] = "attachment; filename=event.ics"
     response.headers["Content-Type"] = "text/calendar; charset=utf-8"
